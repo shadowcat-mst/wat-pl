@@ -289,7 +289,7 @@ sub parse_value {
 
 sub parse_array_value {
   my ($val) = @_;
-  if ($val->[-2] eq '#rest') {
+  if (@$val >= 2 and $val->[-2] eq '#rest') {
     array_to_list(
       [ map parse_value($_), @{$val}[0..$#$val-2] ],
       parse_value($val->[-1])
@@ -329,6 +329,11 @@ sub primitives {
     [ def => 'symbol?' => nwrap(sub { $_[0]->$_isa('Wat::Sym') }) ],
     [ def => 'symbol-name' => nwrap(sub { $_[0]->{name} }) ],
     [ def => 'if' => bless({}, 'Wat::If') ],
+
+  ## Primitives
+
+    [ def => 'quote' => [ '--vau' => [ 'x' ], [ '#ignore', 'x' ] ] ],
+    [ def => 'string', [ '--vau', [ 'sym' ], '#ignore', [ 'symbol-name', 'sym' ] ] ],
     (map [ def => $_ => n_binop($_) ],
        qw(+ - * / % ** << >> x . < <= > >= == != <=> cmp lt le gt ge eq ne & |)
     ),
