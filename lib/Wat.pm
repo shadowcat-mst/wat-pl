@@ -1,5 +1,11 @@
 package Wat;
 
+# Shamelessly copying http://github.com/manuel/wat-js for great justice.
+#
+# Considered to be under https://github.com/manuel/wat-js/blob/master/LICENSE
+# until I can figure out if I can apply normal perl licensing on top of that
+# without violating anything.
+
 use strictures 1;
 use Safe::Isa;
 use Sub::Quote;
