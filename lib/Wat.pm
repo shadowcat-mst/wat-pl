@@ -9,7 +9,7 @@ package Wat;
 use strictures 1;
 use Safe::Isa;
 use Sub::Quote;
-use Scalar::Util qw(looks_like_number);
+use Scalar::Util qw(looks_like_number blessed);
 use List::Util qw(reduce);
 no warnings 'once';
 
@@ -79,6 +79,14 @@ sub combine {
   my ($e, $k, $f, $cmb, $o) = @_;
   if ($cmb->$_can('wat_combine')) {
     return $cmb->wat_combine($e, $k, $f, $o);
+  } elsif (
+    blessed($cmb)
+    and $o->$_isa('Wat::Cons') and $o->{car}->$_isa('Wat::Sym')
+    and $cmb->can(my $method_name = $o->{car}{name})
+  ) {
+    return nwrap(sub { $cmb->$method_name(@_) })->wat_combine(
+             $e, $k, $f, $o->{cdr}
+           );
   }
   die "not a combiner: $cmb";
 }

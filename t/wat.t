@@ -20,4 +20,15 @@ is(
   'string concatenation'
 );
 
+my $obj = bless({}, 'MyClass');
+
+sub MyClass::test { "foo $_[1]" }
+
+$wat->run([ def => myobj => $obj ]);
+
+is(
+  $wat->run([ myobj => test => [ string => 'bar' ] ]), 'foo bar',
+  'method invocation ok'
+);
+
 done_testing;
