@@ -11,6 +11,7 @@ use Safe::Isa;
 use Sub::Quote;
 use Scalar::Util qw(looks_like_number blessed);
 use List::Util qw(reduce);
+use Try::Tiny;
 no warnings 'once';
 
 sub NIL; sub IGN;
@@ -217,8 +218,88 @@ sub Wat::If::wat_combine {
     capture_frame($test, sub { $self->wat_combine($e, @_, $o) });
     return $test;
   }
-  return evalute($e, undef, undef, elt($o, ($test ? 1 : 2)));
+  return evaluate($e, undef, undef, elt($o, ($test ? 1 : 2)));
 }
+
+sub Wat::__Loop::wat_combine {
+  my ($self, $e, $k, $f, $o) = @_;
+  my $first = 1;
+  while (1) {
+    my $res = do {
+      if ($first and is_Continuation($k)) {
+        continue_frame($k, $f);
+      } else {
+        evaluate($e, undef, undef, elt($o, 0));
+      }
+    };
+    $first = 0;
+    if (is_Capture($res)) {
+      capture_frame($res, sub { $self->wat_combine($e, @_, $o) });
+      return $res;
+    }
+  }
+}
+
+sub Wat::_Catch::wat_combine {
+  my ($self, $e, $k, $f, $o) = @_;
+  my $th = elt($o, 0);
+  my $handler = elt($o, 1);
+  my $res = try {
+    if (is_Continuation($k)) {
+      continue_frame($k, $f);
+    } else {
+      combine($e, undef, undef, $th, NIL);
+    }
+  } catch {
+    combine($e, undef, undef, unwrap($handler), list($_));
+  };
+  if (is_Capture($res)) {
+    capture_frame($res, sub { $self->wat_combine($e, @_, $o) });
+  }
+  return $res;
+}
+
+sub Wat::Finally::wat_combine {
+  my ($self, $e, $k, $f, $o) = @_;
+  my $prot = elt($o, 0);
+  my $cleanup = elt($o, 1);
+  my $res = try {
+    if (is_Continuation($k)) {
+      continue_frame($k, $f);
+    } else {
+      evaluate($e, undef, undef, $prot);
+    }
+  } catch {
+    # javascript try rethrows without a catch block.
+    my $err = $_;
+    do_cleanup($e, undef, undef, $cleanup, undef);
+    die $err;
+  };
+  if (is_Capture($res)) {
+    capture_frame($res, sub { $self->wat_combine($e, @_, $o) });
+    return $res;
+  } else {
+    return do_cleanup($e, undef, undef, $cleanup, $res);
+  }
+}
+
+sub do_cleanup {
+  my ($e, $k, $f, $cleanup, $res) = @_;
+  my $fres = do {
+    if (is_Continuation($k)) {
+      continue_frame($k, $f);
+    } else {
+      evaluate($e, undef, undef, $cleanup);
+    }
+  };
+  if (is_Capture($fres)) {
+    capture_frame($fres, sub { do_cleanup($e, @_, $cleanup, $res) });
+    return $fres;
+  } else {
+    return $res;
+  }
+}
+    
 
 ### MISSED OUT A WHOLE CHUNK OF STUFF
 
