@@ -299,9 +299,92 @@ sub do_cleanup {
     return $res;
   }
 }
-    
 
-### MISSED OUT A WHOLE CHUNK OF STUFF
+sub Wat::__PushPrompt::wat_combine {
+  my ($self, $e, $k, $f, $o) = @_;
+  my $prompt = elt($o, 0);
+  my $th = elt($o, 1);
+  my $res = do {
+    if (is_Continuation($k)) {
+      continue_frame($k, $f);
+    } else {
+      combine($e, undef, undef, $th, NIL);
+    }
+  };
+  if (is_Capture($res)) {
+    if ($res->{prompt} eq $prompt) {
+      my $continuation = $res->{k};
+      my $handler = $res->{handler};
+      return combine($e, undef, undef, $handler, Cons($continuation, NIL));
+    } else {
+      capture_frame($res, sub { $self->wat_combine($e, @_, $o) });
+      return $res;
+    }
+  } else {
+    return $res;
+  }
+}
+
+sub Wat::__TakeSubcont::wat_combine {
+  my ($self, $e, $k, $f, $o) = @_;
+  my $prompt = elt($o, 0);
+  my $handler = elt($o, 1);
+  my $cap = Capture($prompt, $handler);
+  capture_frame($cap, sub { combine($e, undef, undef, $_[1], NIL) });
+  return $cap;
+}
+
+sub Wat::__PushSubcont::wat_combine {
+  my ($self, $e, $k, $f, $o) = @_;
+  my $thek = elt($o, 0);
+  my $thef = elt($o, 1);
+  my $res = do {
+    if (is_Continuation($k)) {
+      continue_frame($k, $f);
+    } else {
+      continue_frame($thek, $thef);
+    }
+  };
+  if (is_Capture($res)) {
+    capture_frame($res, sub { $self->wat_combine($e, @_, $o) });
+    return $res;
+  } else {
+    return $res;
+  }
+}
+  
+sub DV { bless({ val => $_[0] }, 'Wat::DV') }
+
+sub Wat::DNew::wat_combine {
+  my ($self, $e, $k, $f, $o) = @_;
+  return DV(elt($o, 0));
+}
+
+sub Wat::DRef::wat_combine {
+  my ($self, $e, $k, $f, $o) = @_;
+  return elt($o, 0)->{val};
+}
+
+sub Wat::__DLet::wat_combine {
+  my ($self, $e, $k, $f, $o) = @_;
+  my $dv = elt($o, 0);
+  my $val = elt($o, 1);
+  my $th = elt($o, 2);
+  local $dv->{val} = $val;
+  my $res = do {
+    if (is_Continuation($k)) {
+      continue_frame($k, $f);
+    } else {
+      combine($e, undef, undef, $th, NIL);
+    }
+  };
+  if (is_Capture($res)) {
+    capture_frame($res, sub { $self->wat_combine($e, @_, $o) });
+    return $res;
+  } else {
+    return $res;
+  }
+}
 
 ## Objects
 
