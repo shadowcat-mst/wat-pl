@@ -676,4 +676,10 @@ sub run {
   evaluate($_[0]->{env}, undef, undef, parse_value($_[1]));
 }
 
+sub run_jsony {
+  my ($self, $jsony) = @_;
+  require JSONY;
+  $self->run(JSONY::decode_jsony($jsony));
+}
+
 1;

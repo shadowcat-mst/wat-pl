@@ -1,0 +1,22 @@
+#!/usr/bin/env perl
+
+use strictures 1;
+use Term::ReadLine;
+use JSONY;
+use Data::Dumper::Concise;
+use Wat;
+
+$|++;
+
+my $rl = Term::ReadLine->new('Wat');
+
+my $wat = Wat->new;
+
+LINE: while (defined(my $line = $rl->readline('> '))) {
+  my $res;
+  eval { $res = Dumper(Wat::repr($wat->run_jsony($struct))); 1 }
+    or do { print "Run failed: $@\n"; next LINE };
+  print $res;
+}
+
+exit 0;
