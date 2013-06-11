@@ -12,6 +12,7 @@ use Sub::Quote;
 use Scalar::Util qw(looks_like_number blessed);
 use List::Util qw(reduce);
 use Try::Tiny;
+use JSONY;
 use Data::Dumper::Concise;
 use constant DEBUG => !!$ENV{WAT_DEBUG};
 no warnings 'once'; # reduce's $a/$b
@@ -507,7 +508,9 @@ sub parse_value {
   my ($val) = @_;
   my $ref = ref($val);
   if (!$ref) {
-    if ($val eq '#ignore') {
+    if (!defined($val)) {
+      return $val;
+    } elsif ($val eq '#ignore') {
       return IGN;
     } elsif (looks_like_number($val)) {
       return $val;
@@ -661,6 +664,10 @@ sub primitives {
   ]
 }
 
+sub basics {
+  our $Basics ||= do { local $/; <DATA> };
+}
+
 sub new {
   my ($class) = @_;
   my $env = make_env;
@@ -668,6 +675,7 @@ sub new {
   env_bind($env, Sym('begin'), bless({}, 'Wat::Begin'));
   my $new = bless({ env => $env }, $class);
   $new->run(primitives);
+  $new->run_jsony(basics);
   return $new;
 }
 
@@ -678,8 +686,76 @@ sub run {
 
 sub run_jsony {
   my ($self, $jsony) = @_;
-  require JSONY;
-  $self->run(JSONY::decode_jsony($jsony));
+  $self->run(decode_jsony($jsony));
 }
 
 1;
+
+__DATA__
+        ["begin",
+         
+         ["def", "compose",
+          ["lambda", ["f", "g"], ["lambda", ["arg"], ["f", ["g", "arg"]]]]],
+
+         ["def", "car", ["lambda", [["x", "#rest", "#ignore"]], "x"]],
+         ["def", "cdr", ["lambda", [["#ignore", "#rest", "x"]], "x"]],
+         ["def", "caar", ["compose", "car", "car"]],
+         ["def", "cadr", ["compose", "car", "cdr"]],
+         ["def", "cdar", ["compose", "cdr", "car"]],
+         ["def", "cddr", ["compose", "cdr", "cdr"]],
+
+         ["def", "define-macro",
+          ["macro", [["name", "#rest", "params"], "#rest", "body"],
+           ["list", "def", "name", ["list*", "macro", "params", "body"]]]],
+
+         ["define-macro", ["define", "lhs", "#rest", "rhs"],
+          ["if", ["cons?", "lhs"],
+           ["list", "def", ["car", "lhs"], ["list*", "lambda", ["cdr", "lhs"], "rhs"]],
+           ["list", "def", "lhs", ["car", "rhs"]]]],
+
+         ["define", ["map-list", "f", "lst"],
+           ["if", ["nil?", "lst"],
+            [],
+            ["cons", ["f", ["car", "lst"]], ["map-list", "f", ["cdr", "lst"]]]]],
+
+         ["define-macro", ["let", "bindings", "#rest", "body"],
+          ["cons",
+           ["list*", "lambda", ["map-list", "car", "bindings"], "body"],
+           ["map-list", "cadr", "bindings"]]],
+
+         ["define-macro", ["let*", "bindings", "#rest", "body"],
+          ["if", ["nil?", "bindings"],
+           ["list*", "let", [], "body"],
+           ["list", "let", ["list", ["car", "bindings"]],
+            ["list*", "let*", ["cdr", "bindings"], "body"]]]],
+
+         ["define-macro", ["where", "expr", "#rest", "bindings"],
+          ["list", "let", "bindings", "expr"]],
+
+         ["define-macro", ["where*", "expr", "#rest", "bindings"],
+          ["list", "let*", "bindings", "expr"]],
+
+         ["define", ["call-with-escape", "fun"],
+          ["let", [["fresh", ["list", null]]],
+           ["catch", ["fun", ["lambda", ["val"], ["throw", ["list", "fresh", "val"]]]],
+            ["lambda", ["exc"],
+             ["if", ["&&", ["cons?", "exc"], ["===", "fresh", ["car", "exc"]]],
+              ["cadr", "exc"],
+              ["throw", "exc"]]]]]],
+
+         ["define-macro", ["let-escape", "name", "#rest", "body"],
+          ["list", "call-with-escape", ["list*", "lambda", ["list", "name"], "body"]]],
+
+         ["define", ["call-while", "test-fun", "body-fun"],
+          ["let-escape", "return",
+           ["loop",
+            ["if", ["test-fun"],
+             ["body-fun"],
+             ["return", null]]]]],
+
+         ["define-macro", ["while", "test", "#rest", "body"],
+          ["list", "call-while",
+           ["list", "lambda", [], "test"],
+           ["list*", "lambda", [], "body"]]]
+
+]
