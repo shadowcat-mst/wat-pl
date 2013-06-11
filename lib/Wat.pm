@@ -556,18 +556,104 @@ sub primitives {
     [ def => 'make-environment' => nwrap(\&make_env) ],
     [ def => wrap => nwrap(\&wrap) ],
     [ def => unwrap => nwrap(\&unwrap) ],
+
   ## Values
     [ def => cons => nwrap(\&Cons) ],
     [ def => 'cons?' => nwrap(sub { $_[0]->$_isa('Wat::Cons') }) ],
     [ def => 'nil?' => nwrap(sub { $_[0] eq NIL }) ],
     [ def => 'symbol?' => nwrap(sub { $_[0]->$_isa('Wat::Sym') }) ],
     [ def => 'symbol-name' => nwrap(sub { $_[0]->{name} }) ],
+
+  ## First order control
     [ def => 'if' => bless({}, 'Wat::If') ],
+    [ def => '--loop' => bless({}, 'Wat::__Loop') ],
+    [ def => throw => nwrap(sub { fail @_ }) ],
+    [ def => '--catch' => wrap(bless({}, 'Wat::__Catch')) ],
+    [ def => finally => bless({}, 'Wat::Finally') ],
+
+  ## Delimited control
+    [ def => '--push-prompt' => wrap(bless({}, 'Wat::__PushPrompt')) ],
+    [ def => '--take-subcont' => wrap(bless({}, 'Wat::__TakeSubcont')) ],
+    [ def => '--push-subcont' => wrap(bless({}, 'Wat::__PushSubcont')) ],
+
+  ## Dynamically scoped variables
+    [ def => dnew => wrap(bless({}, 'Wat::DNew')) ],
+    [ def => '--dlet' => wrap(bless({}, 'Wat::__DLet')) ],
+    [ def => dref => wrap(bless({}, 'Wat::DRef')) ],
+
+  ## Optimisation
+    [ def => 'list*' => nwrap(\&list_star) ],
 
   ## Primitives
+    [ def => quote => [ '--vau' => [ 'x' ], '#ignore', 'x' ] ],
+    [ def => list => [ wrap => [
+      '--vau' => arglist => '#ignore' => 'arglist'
+    ] ] ],
+    [ def => string => [ '--vau', [ 'sym' ], '#ignore', [ 'symbol-name', 'sym' ] ] ],
 
-    [ def => 'quote' => [ '--vau' => [ 'x' ], [ '#ignore', 'x' ] ] ],
-    [ def => 'string', [ '--vau', [ 'sym' ], '#ignore', [ 'symbol-name', 'sym' ] ] ],
+    [ def => 'make-macro-expander',
+      [ wrap =>
+        [ '--vau', [ 'expander' ], '#ignore',
+          [ '--vau', 'operands', 'env',
+            [ eval =>
+              [ eval =>
+                [ cons => 'expander', 'operands' ],
+                [ 'make-environment']
+              ],
+              'env'
+            ]]]]],
+
+    [ def => 'vau',
+      [ 'make-macro-expander' =>
+        [ '--vau' => [ qw(params env-param #rest body) ], '#ignore',
+          [ list => qw(--vau params env-param), [ qw(cons begin body) ]]
+        ]]],
+
+    [ def => 'macro',
+      [ 'make-macro-expander' =>
+        [ vau => [ qw(params #rest body) ], '#ignore',
+          [ list => 'make-macro-expander' =>
+            [ qw(list* vau params #ignore body) ]
+          ]
+        ]]],
+
+    [ def => 'lambda',
+      [ macro => [ qw(params #rest body) ],
+        [ list => wrap => [ qw(list* vau params #ignore body) ] ]]],
+
+    [ def => 'loop',
+      [ macro => 'body',
+        [ list => '--loop' => [ qw(list* begin body) ] ]]],
+
+    [ def => 'catch',
+      [ macro => [ qw(protected handler) ],
+        [ list => '--catch' =>
+          [ 'list', 'lambda', [], 'protected' ],
+          'handler',
+        ]]],
+
+    [ def => 'push-prompt',
+      [ macro => [ qw(prompt #rest body) ],
+        [ list => '--push-prompt' =>
+          'prompt',
+          [ 'list*', 'lambda', [], 'body' ],
+        ]]],
+
+    [ def => 'take-subcont',
+      [ macro => [ qw(prompt k #rest body) ],
+        [ list => '--take-subcont' =>
+          'prompt',
+          [ 'list*', 'lambda', [ qw(list k) ], 'body' ],
+        ]]],
+
+    [ def => 'push-subcont',
+      [ macro => [ qw(k #rest body) ],
+        [ list => '--push-subcont' =>
+          'k',
+          [ 'list*', 'lambda', [], 'body' ],
+        ]]],
+
+  ## Operators
     (map [ def => $_ => n_binop($_) ],
        qw(+ - * / % ** << >> x . < <= > >= == != <=> cmp lt le gt ge eq ne & |)
     ),
