@@ -14,7 +14,7 @@ my $wat = Wat->new;
 
 LINE: while (defined(my $line = $rl->readline('> '))) {
   my $res;
-  eval { $res = Dumper(Wat::repr($wat->run_jsony($struct))); 1 }
+  eval { $res = Dumper(Wat::repr($wat->run_jsony($line))); 1 }
     or do { print "Run failed: $@\n"; next LINE };
   print $res;
 }
