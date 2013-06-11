@@ -420,7 +420,7 @@ sub elt {
 }
 
 sub make_env {
-  bless({ bindings => ($_[0]->{bindings}||{}) }, 'Wat::Env');
+  bless({ bindings => { %{($_[0]->{bindings}||{})} } }, 'Wat::Env');
 }
 sub lookup {
   my ($e, $name) = @_;
