@@ -12,7 +12,10 @@ use Sub::Quote;
 use Scalar::Util qw(looks_like_number blessed);
 use List::Util qw(reduce);
 use Try::Tiny;
-no warnings 'once';
+use Data::Dumper::Concise;
+use constant DEBUG => !!$ENV{WAT_DEBUG};
+no warnings 'once'; # reduce's $a/$b
+no warnings 'qw'; # using #rest etc. in qw()
 
 sub NIL; sub IGN;
 
@@ -43,6 +46,17 @@ sub continue_frame {
 sub evaluate {
   my ($e, $k, $f, $x) = @_;
   if ($x->$_can('wat_eval')) {
+    our @Wat_Stack;
+    local @Wat_Stack = (@Wat_Stack, $x);
+    if (@Wat_Stack > 80) {
+      fail("Stack depth limit exceeded");
+    }
+    if (DEBUG) {
+      warn 'Evaluating: '.Dumper(repr($x));
+      my $r = $x->wat_eval($e, $k, $f);
+      warn 'Evaluated: '.Dumper(repr($x)).'  -> '.Dumper(repr($r));
+      return $r;
+    }
     return $x->wat_eval($e, $k, $f);
   } else {
     return $x;
@@ -73,6 +87,10 @@ sub Wat::Cons::wat_eval {
   }
   return combine($e, undef, undef, $op, $self->{cdr});
 }
+sub Wat::Cons::wat_repr {
+  my ($self) = @_;
+  return [ map repr($_), @{list_to_array($self)} ];
+}
 
 ## Operative and applicative combiners
 
@@ -89,7 +107,7 @@ sub combine {
              $e, $k, $f, $o->{cdr}
            );
   }
-  die "not a combiner: $cmb";
+  fail("not a combiner: $cmb");
 }
 
 sub Opv {
@@ -109,7 +127,9 @@ sub Wat::Opv::wat_combine {
   env_bind($xe, $self->{ep}, $e);
   return evaluate($xe, $k, $f, $self->{x});
 }
-
+sub Wat::Opv::wat_repr {
+  [ '--vau', map repr($_), @{$_[0]}{qw(p ep x)} ];
+}
 sub Wat::Apv::wat_combine {
   my ($self, $e, $k, $f, $o) = @_;
   my $args = do {
@@ -125,11 +145,15 @@ sub Wat::Apv::wat_combine {
   }
   return $self->{cmb}->wat_combine($e, undef, undef, $args);
 }
+sub Wat::Apv::wat_repr { [ wrap => repr($_[0]->{cmb}) ] }
 
 sub eval_args {
   my ($e, $k, $f, $todo, $done) = @_;
   if ($todo eq NIL) {
     return reverse_list($done);
+  }
+  unless ($todo->$_isa('Wat::Cons')) {
+    fail("Expected cons cell, got ${todo}");
   }
   my $arg = do {
     if (is_Continuation($k)) {
@@ -400,7 +424,7 @@ sub make_env {
 }
 sub lookup {
   my ($e, $name) = @_;
-  die "unbound: ${name}" unless exists $e->{bindings}{$name};
+  fail("unbound: ${name}") unless exists $e->{bindings}{$name};
   return $e->{bindings}{$name};
 }
 sub env_bind {
@@ -410,9 +434,11 @@ sub env_bind {
 }
 sub Wat::Sym::wat_match {
   my ($self, $e, $rhs) = @_;
+  warn "Binding ${\$self->{name}} to: ".Dumper(repr($rhs)) if DEBUG;
   $e->{bindings}{$self->{name}} = $rhs;
   return;
 }
+sub Wat::Sym::wat_repr { $_[0]->{name} }
 sub Wat::Cons::wat_match {
   my ($self, $e, $rhs) = @_;
   $self->{car}->wat_match($e, $rhs->{car});
@@ -421,15 +447,41 @@ sub Wat::Cons::wat_match {
 }
 sub Wat::Nil::wat_match {
   my ($self, $e, $rhs) = @_;
-  die "NIL expected, but got: ${rhs}" unless $rhs eq NIL;
+  fail("NIL expected, but got: ${\($rhs||'undef')}") unless $rhs||'' eq NIL;
   return;
 }
 sub Wat::Ign::wat_match {}
+sub Wat::Ign::wat_repr { '#ignore' }
 
 ## Utilities
 
-sub fail { die $_[0] }
+sub fail {
+  our @Wat_Stack;
+  die $_[0].' with stack '.Dumper([ map repr($_), @Wat_Stack ])
+}
+sub repr {
+  my ($r) = @_;
+  if ($r->$_can('wat_repr')) {
+    $r->wat_repr
+  } elsif (!ref($r)) {
+    if (looks_like_number($r)) {
+      $r
+    } else {
+      [ 'string', $r ]
+    }
+  } else {
+    "${r}"
+  }
+}
 sub list { array_to_list([ @_ ]) }
+sub list_star {
+  if (@_ > 1) {
+    my $end = pop(@_);
+    array_to_list([ @_ ], $end);
+  } else {
+    array_to_list(\@_);
+  }
+}
 sub array_to_list {
   my ($ary, $end) = @_;
   reduce { Cons($b, $a) } $end||NIL, reverse @$ary;
@@ -438,6 +490,10 @@ sub list_to_array {
   my ($c) = @_;
   my @ary;
   while ($c ne NIL) {
+    unless ($c->$_isa('Wat::Cons')) {
+      push @ary, Sym('#rest'), $c;
+      last;
+    }
     push @ary, $c->{car};
     $c = $c->{cdr};
   }
@@ -530,6 +586,7 @@ sub new {
 }
 
 sub run {
+  local our @Wat_Stack;
   evaluate($_[0]->{env}, undef, undef, parse_value($_[1]));
 }
 
