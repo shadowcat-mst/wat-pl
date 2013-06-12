@@ -265,7 +265,7 @@ sub Wat::__Loop::wat_combine {
   }
 }
 
-sub Wat::_Catch::wat_combine {
+sub Wat::__Catch::wat_combine {
   my ($self, $e, $k, $f, $o) = @_;
   my $th = elt($o, 0);
   my $handler = elt($o, 1);
@@ -658,9 +658,11 @@ sub primitives {
 
   ## Operators
     (map [ def => $_ => n_binop($_) ],
-       qw(+ - * / % ** << >> x . < <= > >= == != <=> cmp lt le gt ge eq ne & |)
+       qw(+ - * / % ** << >> x . < <= > >= == != <=> cmp lt le gt ge eq ne & |
+          && || and or)
     ),
-    (map [ def => $_ => n_unop($_) ], qw(- ! ~)),
+    (map [ def => $_ => n_unop($_) ], qw(- ! ~ not)),
+    [ def => '===' => n_binop('eq') ],
   ]
 }
 
