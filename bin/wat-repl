@@ -4,6 +4,7 @@ use strictures 1;
 use Term::ReadLine;
 use JSONY;
 use Data::Dumper::Concise;
+use IO::All;
 use Wat;
 
 $|++;
@@ -11,6 +12,10 @@ $|++;
 my $rl = Term::ReadLine->new('Wat');
 
 my $wat = Wat->new;
+
+if (@ARGV) {
+  $wat->run_jsony(io->file($ARGV[0])->all);
+}
 
 LINE: while (defined(my $line = $rl->readline('> '))) {
   my $res;
