@@ -26,6 +26,15 @@ is(
   'let + while + set!'
 );
 
+is(
+  $wat->run_jsony(q[[
+    let [[x 0] [inc [vau [s] env [eval [list set! s [list + s 1]] env]]]]
+      [begin [inc x] [inc x] x]
+  ]]),
+  2,
+  'vau for inc works'
+);
+
 my $obj = bless({}, 'MyClass');
 
 sub MyClass::test { "foo $_[1]" }
