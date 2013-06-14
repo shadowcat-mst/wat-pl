@@ -37,6 +37,8 @@ is(
 
 is($wat->run('+')->(1, 2), 3, 'Applicative coderef overloading ok');
 
+is($wat->run([ sub { $_[0] + $_[1] }, 1, 2 ]), 3, 'Coderef as applicative ok');
+
 my $obj = bless({}, 'MyClass');
 
 sub MyClass::test { "foo $_[1]" }

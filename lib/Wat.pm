@@ -99,6 +99,8 @@ sub combine {
   my ($e, $k, $f, $cmb, $o) = @_;
   if ($cmb->$_can('wat_combine')) {
     return $cmb->wat_combine($e, $k, $f, $o);
+  } elsif (ref($cmb) and ref($cmb) eq 'CODE') {
+    return nwrap($cmb)->wat_combine($e, $k, $f, $o);
   } elsif (
     blessed($cmb)
     and $o->$_isa('Wat::Cons') and $o->{car}->$_isa('Wat::Sym')
