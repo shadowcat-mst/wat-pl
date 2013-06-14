@@ -421,12 +421,16 @@ sub elt {
 }
 
 sub make_env {
-  bless({ bindings => { %{($_[0]->{bindings}||{})} } }, 'Wat::Env');
+  bless({ bindings => {}, outer => $_[0] }, 'Wat::Env');
 }
 sub lookup {
   my ($e, $name) = @_;
-  fail("unbound: ${name}") unless exists $e->{bindings}{$name};
-  return $e->{bindings}{$name};
+  my $le = $e;
+  while ($le) {
+    return $le->{bindings}{$name} if exists $le->{bindings}{$name};
+    $le = $le->{outer};
+  }
+  fail("unbound: ${name}");
 }
 sub env_bind {
   my ($e, $lhs, $rhs) = @_;
