@@ -104,7 +104,9 @@ sub combine {
   } elsif (
     blessed($cmb)
     and $o->$_isa('Wat::Cons') and $o->{car}->$_isa('Wat::Sym')
-    and $cmb->can(my $method_name = $o->{car}{name})
+    and $cmb->can(
+          my $method_name = do { (my $x = $o->{car}{name}) =~ s/-/_/g; $x }
+        )
   ) {
     return nwrap(sub { $cmb->$method_name(@_) })->wat_combine(
              $e, $k, $f, $o->{cdr}
