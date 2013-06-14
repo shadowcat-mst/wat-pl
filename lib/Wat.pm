@@ -193,6 +193,24 @@ sub Wat::Def::wat_combine {
   return env_bind($e, elt($o, 0), $val);
 }
 
+sub Wat::Set::wat_combine {
+  my ($self, $e, $k, $f, $o) = @_;
+  my $val = do {
+    if (is_Continuation($k)) {
+      continue_frame($k, $f);
+    } else {
+      evaluate($e, undef, undef, elt($o, 1));
+    }
+  };
+  if (is_Capture($val)) {
+    capture_frame($val, sub { $self->wat_combine($e, @_, $o) });
+    return $val;
+  }
+  my $car = elt($o, 0);
+  fail("Not a symbol: $car") unless $car->$_isa('Wat::Sym');
+  return env_bind(lookup_env($e, $car->{name}), $car, $val);
+}
+
 sub Wat::Eval::wat_combine {
   my ($self, $e, $k, $f, $o) = @_;
   return evaluate(elt($o, 1), $k, $f, elt($o, 0));
@@ -423,14 +441,18 @@ sub elt {
 sub make_env {
   bless({ bindings => {}, outer => $_[0] }, 'Wat::Env');
 }
-sub lookup {
+sub lookup_env {
   my ($e, $name) = @_;
   my $le = $e;
   while ($le) {
-    return $le->{bindings}{$name} if exists $le->{bindings}{$name};
+    return $le if exists $le->{bindings}{$name};
     $le = $le->{outer};
   }
   fail("unbound: ${name}");
+}
+sub lookup {
+  my ($e, $name) = @_;
+  lookup_env($e, $name)->{bindings}{$name};
 }
 sub env_bind {
   my ($e, $lhs, $rhs) = @_;
@@ -462,6 +484,7 @@ sub Wat::Ign::wat_repr { '#ignore' }
 
 sub fail {
   our @Wat_Stack;
+  die $_[0] if ref($_[0]);
   die $_[0].' with stack '.Dumper([ map repr($_), @Wat_Stack ])
 }
 sub repr {
@@ -561,6 +584,7 @@ sub primitives {
     [ def => '--vau', bless({}, 'Wat::__Vau') ],
     [ def => eval => wrap(bless({}, 'Wat::Eval')) ],
     [ def => 'make-environment' => nwrap(\&make_env) ],
+    [ def => 'set!' => bless({}, 'Wat::Set') ],
     [ def => wrap => nwrap(\&wrap) ],
     [ def => unwrap => nwrap(\&unwrap) ],
 
