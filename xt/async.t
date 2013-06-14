@@ -11,7 +11,7 @@ $wat->run([ def => loop => $loop ]);
 
 $wat->run_jsony(q[begin
   [def x 0]
-  [let [[f [loop delay-future [string after] 0.1]]]
+  [let [[f [loop delay-future :after 0.1]]]
     [f on-done [lambda [] [set! x 1] [loop stop]]]]
 ]);
 
@@ -27,7 +27,7 @@ $wat->run_jsony(q[begin
       [default-prompt [quote default-prompt]]
       [sleep [lambda [ms]
         [take-subcont default-prompt k
-          [[loop delay-future [string after] [/ ms 1000]]
+          [[loop delay-future :after [/ ms 1000]]
             on-done [lambda [] [push-prompt default-prompt [push-subcont k 3]]]]
         ]
       ]]

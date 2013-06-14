@@ -567,6 +567,8 @@ sub parse_value {
       return RST;
     } elsif (looks_like_number($val)) {
       return $val;
+    } elsif ($val =~ s/^://) {
+      return $val;
     } else {
       return Sym($val);
     }
