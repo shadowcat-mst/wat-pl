@@ -20,6 +20,12 @@ is(
   'string concatenation'
 );
 
+is(
+  $wat->run_jsony(q[let [[i 0]] [begin [while [< i 5] [set! i [+ i 1]]] i]]),
+  5,
+  'let + while + set!'
+);
+
 my $obj = bless({}, 'MyClass');
 
 sub MyClass::test { "foo $_[1]" }
