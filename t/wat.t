@@ -35,6 +35,8 @@ is(
   'vau for inc works'
 );
 
+is($wat->run('+')->(1, 2), 3, 'Applicative coderef overloading ok');
+
 my $obj = bless({}, 'MyClass');
 
 sub MyClass::test { "foo $_[1]" }

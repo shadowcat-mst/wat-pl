@@ -131,6 +131,22 @@ sub Wat::Opv::wat_combine {
 sub Wat::Opv::wat_repr {
   [ '--vau', map repr($_), @{$_[0]}{qw(p ep x)} ];
 }
+
+{ package Wat::Apv;
+  use overload (
+    '&{}' => 'to_perl_sub',
+    fallback => 1,
+  );
+}
+
+sub Wat::Apv::to_perl_sub {
+  my ($self) = @_;
+  my $cmb = $self->{cmb};
+  sub {
+    bless({ env => make_env() }, 'Wat')->run([ $cmb, @_ ])
+  }
+}
+
 sub Wat::Apv::wat_combine {
   my ($self, $e, $k, $f, $o) = @_;
   my $args = do {
