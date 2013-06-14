@@ -28,13 +28,12 @@ $wat->run_jsony(q[begin
       [sleep [lambda [ms]
         [take-subcont default-prompt k
           [[loop delay-future [string after] [/ ms 1000]]
-            on-done [lambda [] [push-prompt default-prompt [push-subcont k]]]]
+            on-done [lambda [] [push-prompt default-prompt [push-subcont k 3]]]]
         ]
       ]]
     ]
     [push-prompt default-prompt
-      [sleep 100]
-      [set! x 1]
+      [set! x [sleep 100]]
       [loop stop]
     ]
   ]
@@ -44,6 +43,6 @@ is($wat->run('x'), 0, 'x initialised to 0');
 
 $loop->run;
 
-is($wat->run('x'), 1, 'x updated after continuation resume');
+is($wat->run('x'), 3, 'x updated after continuation resume');
 
 done_testing;
