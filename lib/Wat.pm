@@ -456,7 +456,6 @@ sub Wat::__DLet::wat_combine {
 
 sub NIL { our $_Nil ||= bless({}, 'Wat::Nil') }
 sub IGN { our $_Ign ||= bless({}, 'Wat::Ign') }
-sub RST { our $_Rst ||= bless({}, 'Wat::Rst') }
 
 sub elt {
   (reduce { $a->{cdr} } $_[0], ('cdr') x $_[1])->{car}
@@ -492,12 +491,8 @@ sub Wat::Sym::wat_match {
 sub Wat::Sym::wat_repr { $_[0]->{name} }
 sub Wat::Cons::wat_match {
   my ($self, $e, $rhs) = @_;
-  if ($self->{car}->$_isa('Wat::Rst')) {
-    $self->{cdr}{car}->wat_match($e, $rhs);
-  } else {
-    $self->{car}->wat_match($e, $rhs->{car});
-    $self->{cdr}->wat_match($e, $rhs->{cdr});
-  }
+  $self->{car}->wat_match($e, $rhs->{car});
+  $self->{cdr}->wat_match($e, $rhs->{cdr});
   return;
 }
 sub Wat::Nil::wat_match {
@@ -505,9 +500,7 @@ sub Wat::Nil::wat_match {
   fail("NIL expected, but got: ${\($rhs||'undef')}") unless $rhs||'' eq NIL;
   return;
 }
-sub Wat::Nil::wat_repr { 'nil' }
-sub Wat::Rst::wat_match { fail("Attempt to match #rest") }
-sub Wat::Rst::wat_repr { '#rest' }
+sub Wat::Nil::wat_repr { [] }
 sub Wat::Ign::wat_match {}
 sub Wat::Ign::wat_repr { '#ignore' }
 
@@ -548,7 +541,11 @@ sub array_to_list {
 sub list_to_array {
   my ($c) = @_;
   my @ary;
-  while ($c ne NIL) {
+  while (defined($c) and $c ne NIL) {
+    unless ($c->$_isa('Wat::Cons')) {
+      push @ary, Sym('#rest'), $c;
+      last;
+    }
     push @ary, $c->{car};
     $c = $c->{cdr};
   }
@@ -566,8 +563,6 @@ sub parse_value {
       return $val;
     } elsif ($val eq '#ignore') {
       return IGN;
-    } elsif ($val eq '#rest') {
-      return RST;
     } elsif (looks_like_number($val)) {
       return $val;
     } elsif ($val =~ s/^://) {
@@ -576,7 +571,13 @@ sub parse_value {
       return Sym($val);
     }
   } elsif ($ref eq 'ARRAY') {
-    return array_to_list([ map parse_value($_), @$val ]);
+    my $end;
+    my @val = @$val;
+    if ($val[-2] and $val[-2] eq '#rest') {
+      $end = pop @val;
+      pop @val; # throw away the '#rest'
+    }
+    return array_to_list([ map parse_value($_), @val ], parse_value($end));
   } else {
     return $val;
   }
@@ -610,7 +611,6 @@ sub primitives {
   ## Values
     [ def => cons => nwrap(\&Cons) ],
     [ def => 'cons?' => nwrap(sub { $_[0]->$_isa('Wat::Cons') }) ],
-    [ def => nil => NIL ],
     [ def => 'nil?' => nwrap(sub { $_[0] eq NIL }) ],
     [ def => 'symbol?' => nwrap(sub { $_[0]->$_isa('Wat::Sym') }) ],
     [ def => 'symbol-name' => nwrap(sub { $_[0]->{name} }) ],
