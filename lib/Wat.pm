@@ -708,6 +708,45 @@ sub primitives {
     ),
     (map [ def => $_ => n_unop($_) ], qw(- ! ~ not)),
     [ def => '===' => n_binop('eq') ],
+
+  ## Data structures
+
+    [ def => hash => sub { +{ @_ } } ],
+    [ def => array => sub { [ @_ ] } ],
+    [ def => fetch => sub {
+        my $r = ref($_[0])||'';
+        if ($r eq 'HASH') { $_[0]->{$_[1]} }
+        elsif ($r eq 'ARRAY') { $_[0]->[$_[1]] }
+        else { fail("Neither hash nor array (in fetch): $r") }
+      }
+    ],
+    [ def => store => sub {
+        my $r = ref($_[0])||'';
+        if ($r eq 'HASH') { $_[0]->{$_[1]} = $_[2] }
+        elsif ($r eq 'ARRAY') { $_[0]->[$_[1]] = $_[2] }
+        else { fail("Neither hash nor array (in store): $r") }
+      }
+    ],
+    [ def => keys => sub {
+        my $r = ref($_[0])||'';
+        if ($r eq 'HASH') { array_to_list([ keys %{$_[0]} ]) }
+        elsif ($r eq 'ARRAY') { array_to_list([ 0..$#{$_[0]} ]) }
+        else { fail("Neither hash nor array (in keys): $r") }
+      }
+    ],
+    [ def => values => sub {
+        my $r = ref($_[0])||'';
+        if ($r eq 'HASH') { array_to_list([ values %{$_[0]} ]) }
+        elsif ($r eq 'ARRAY') { array_to_list($_[0]) }
+        else { fail("Neither hash nor array (in values): $r") }
+      }
+    ],
+    [ def => push => sub { push @{$_[0]}, $_[1]; $_[1] } ],
+    [ def => unshift => sub { unshift @{$_[0]}, $_[1]; $_[1] } ],
+    [ def => pop => sub { pop @{$_[0]} } ],
+    [ def => shift => sub { shift @{$_[0]} } ],
+    [ def => 'exists-key' => sub { exists $_[0]->{$_[1]} } ],
+    [ def => 'delete-key' => sub { delete $_[0]->{$_[1]} } ],
   ]
 }
 
