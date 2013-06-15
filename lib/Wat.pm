@@ -16,6 +16,7 @@ use List::Util qw(reduce);
 use Try::Tiny;
 use JSONY;
 use Data::Dumper::Concise;
+use Module::Runtime qw(use_module);
 use constant DEBUG => !!$ENV{WAT_DEBUG};
 no warnings 'once'; # reduce's $a/$b
 no warnings 'qw'; # using #rest etc. in qw()
@@ -749,6 +750,22 @@ sub primitives {
     [ def => shift => sub { shift @{$_[0]} } ],
     [ def => 'exists-key' => sub { exists $_[0]->{$_[1]} } ],
     [ def => 'delete-key' => sub { delete $_[0]->{$_[1]} } ],
+
+  ## Classes
+
+    [ def => 'call-method' => sub {
+        my ($inv, $meth) = (shift, shift);
+        (ref($inv) ? $inv : use_module($inv))->$meth(@_)
+      }
+    ],
+    [ def => new => [
+      macro => [ qw(inv #rest args) ],
+        [ qw(list* call-method inv :new args) ],
+    ]],
+    [ def => can => [
+      macro => [ qw(inv #rest args) ],
+        [ qw(list* call-method inv :can args) ],
+    ]],
   ]
 }
 

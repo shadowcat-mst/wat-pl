@@ -39,15 +39,29 @@ is($wat->run('+')->(1, 2), 3, 'Applicative coderef overloading ok');
 
 is($wat->run([ sub { $_[0] + $_[1] }, 1, 2 ]), 3, 'Coderef as applicative ok');
 
-my $obj = bless({}, 'MyClass');
+$INC{'MyClass.pm'} = __FILE__;
+
+sub MyClass::new { bless({}, 'MyClass') }
 
 sub MyClass::test { "foo $_[1]" }
 
-$wat->run([ def => myobj => $obj ]);
+$wat->run([ def => myobj => [new => ':MyClass'] ]);
 
 is(
   $wat->run([ myobj => test => [ string => 'bar' ] ]), 'foo bar',
   'method invocation ok'
+);
+
+is(
+  $wat->run([ [ can => ':MyClass', ':test' ], undef, [ string => 'bar' ] ]),
+  'foo bar',
+  'method invocation (via class can) ok'
+);
+
+is(
+  $wat->run([ [ can => myobj => ':test' ], undef, [ string => 'bar' ] ]),
+  'foo bar',
+  'method invocation (via object can) ok'
 );
 
 done_testing;
