@@ -1,13 +1,10 @@
 use strictures 1;
 use Test::More;
 use Wat;
-use IO::Async::Loop;
-
-my $loop = IO::Async::Loop->new;
 
 my $wat = Wat->new;
 
-$wat->run([ def => loop => $loop ]);
+$wat->run_jsony(q[def loop [new :IO::Async::Loop]]);
 
 $wat->run_jsony(q[begin
   [def x 0]
@@ -17,7 +14,7 @@ $wat->run_jsony(q[begin
 
 is($wat->run('x'), 0, 'Value initialised to 0');
 
-$loop->run;
+$wat->run_jsony(q[loop run]);
 
 is($wat->run('x'), 1, 'Value updated on future completion');
 
@@ -41,7 +38,7 @@ $wat->run_jsony(q[begin
 
 is($wat->run('x'), 0, 'x initialised to 0');
 
-$loop->run;
+$wat->run_jsony(q[loop run]);
 
 is($wat->run('x'), 3, 'x updated after continuation resume');
 
