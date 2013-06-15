@@ -4,22 +4,16 @@ use Wat;
 
 my $wat = Wat->new;
 
-$wat->run_jsony(q[def loop [new :IO::Async::Loop]]);
-
 $wat->run_jsony(q[begin
+  [def loop [new :IO::Async::Loop]]
+  [def is [can :Test::More :is]]
   [def x 0]
   [let [[f [loop delay-future :after 0.1]]]
     [f on-done [lambda [] [set! x 1] [loop stop]]]]
-]);
-
-is($wat->run('x'), 0, 'Value initialised to 0');
-
-$wat->run_jsony(q[loop run]);
-
-is($wat->run('x'), 1, 'Value updated on future completion');
-
-$wat->run_jsony(q[begin
-  [def x 0]
+  [is x 0 [string 'Value initialised to 0']]
+  [loop run]
+  [is x 1 [string 'Value updated on future completion']]
+  [set! x 0]
   [let* [
       [default-prompt [quote default-prompt]]
       [sleep [lambda [ms]
@@ -33,13 +27,10 @@ $wat->run_jsony(q[begin
       [set! x [sleep 100]]
       [loop stop]
     ]
+    [is x 0 [string 'x initialised to 0']]
+    [loop run]
+    [is x 3 [string 'x updated after continuation resume']]
   ]
 ]);
-
-is($wat->run('x'), 0, 'x initialised to 0');
-
-$wat->run_jsony(q[loop run]);
-
-is($wat->run('x'), 3, 'x updated after continuation resume');
 
 done_testing;
