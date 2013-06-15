@@ -640,8 +640,13 @@ sub primitives {
     [ def => list => [ wrap => [
       '--vau' => arglist => '#ignore' => 'arglist'
     ] ] ],
-    [ def => string => [ '--vau', [ 'sym' ], '#ignore', [ 'symbol-name', 'sym' ] ] ],
-
+    [ def => string => [
+      '--vau', [ 'sym' ], '#ignore', [
+        'if', [ 'symbol?', 'sym' ],
+          [ 'symbol-name', 'sym' ],
+          [ sub { ':'.$_[0] }, 'sym' ],
+      ]
+    ]],
     [ def => 'make-macro-expander',
       [ wrap =>
         [ '--vau', [ 'expander' ], '#ignore',

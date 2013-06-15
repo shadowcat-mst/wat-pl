@@ -64,4 +64,10 @@ is(
   'method invocation (via object can) ok'
 );
 
+is(
+  $wat->run([ string => ':foo' ]),
+  ':foo',
+  'string returns colon ok'
+);
+
 done_testing;
