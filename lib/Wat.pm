@@ -1,5 +1,7 @@
 package Wat;
 
+our $VERSION = '0.001001';
+
 # Shamelessly copying http://github.com/manuel/wat-js for great justice.
 #
 # Considered to be under https://github.com/manuel/wat-js/blob/master/LICENSE
@@ -776,6 +778,12 @@ sub run_jsony {
 }
 
 1;
+
+=head1 NAME
+
+Wat - An operative (fexpr based) embedded lisp with delimited continuations
+
+=cut
 
 __DATA__
         ["begin",
