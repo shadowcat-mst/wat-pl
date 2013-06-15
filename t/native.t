@@ -17,25 +17,25 @@ is_deeply(
 );
 
 is_deeply(
-  [ sort @{$wat->run_jsony(q[eval [list* array [keys myh]]])} ],
+  [ sort @{$wat->run_jsony(q[eval [cons array [keys myh]]])} ],
   [ 'bar', 'foo' ],
   'Hash keys ok'
 );
 
 is_deeply(
-  $wat->run_jsony(q[eval [list* array [keys mya]]]),
+  $wat->run_jsony(q[eval [cons array [keys mya]]]),
   [ 0,1,2,3 ],
   'Array keys ok'
 );
 
 is_deeply(
-  [ sort @{$wat->run_jsony(q[eval [list* array [values myh]]])} ],
+  [ sort @{$wat->run_jsony(q[eval [cons array [values myh]]])} ],
   [ 1, 2 ],
   'Hash values ok'
 );
 
 is_deeply(
-  $wat->run_jsony(q[eval [list* array [values mya]]]),
+  $wat->run_jsony(q[eval [cons array [values mya]]]),
   [ 1 .. 4 ],
   'Array values ok'
 );
