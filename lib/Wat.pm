@@ -480,6 +480,7 @@ sub lookup {
 }
 sub env_bind {
   my ($e, $lhs, $rhs) = @_;
+  fail("Can't match ${lhs}") unless $lhs->can('wat_match');
   $lhs->wat_match($e, $rhs);
   return $rhs;
 }
