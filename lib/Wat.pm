@@ -150,7 +150,7 @@ sub Wat::Apv::to_perl_sub {
   my ($self) = @_;
   my $cmb = $self->{cmb};
   sub {
-    bless({ env => make_env() }, 'Wat')->run([ $cmb, @_ ])
+    evaluate(make_env(), undef, undef, array_to_list([ $cmb, @_ ]));
   }
 }
 
