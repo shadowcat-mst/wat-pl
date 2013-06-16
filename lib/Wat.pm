@@ -249,6 +249,7 @@ sub Wat::Begin::wat_combine {
     return begin($e, $k, $f, $o);
   }
 }
+sub Wat::Begin::wat_repr { 'begin' }
 
 sub begin {
   my ($e, $k, $f, $xs) = @_;
