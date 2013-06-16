@@ -613,7 +613,7 @@ sub primitives {
   ## Values
     [ def => cons => nwrap(\&Cons) ],
     [ def => 'cons?' => nwrap(sub { $_[0]->$_isa('Wat::Cons') }) ],
-    [ def => 'nil?' => nwrap(sub { $_[0] eq NIL }) ],
+    [ def => 'nil?' => nwrap(sub { $_[0] and $_[0] eq NIL }) ],
     [ def => 'symbol?' => nwrap(sub { $_[0]->$_isa('Wat::Sym') }) ],
     [ def => 'symbol-name' => nwrap(sub { $_[0]->{name} }) ],
 
