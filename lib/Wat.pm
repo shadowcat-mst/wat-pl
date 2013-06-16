@@ -716,7 +716,7 @@ sub primitives {
        qw(+ - * / % ** << >> x . < <= > >= == != <=> cmp lt le gt ge eq ne & |
           && || and or)
     ),
-    (map [ def => $_ => n_unop($_) ], qw(- ! ~ not)),
+    (map [ def => $_ => n_unop($_) ], qw(- ! ~ not ref)),
     [ def => '===' => n_binop('eq') ],
 
   ## Data structures
@@ -757,6 +757,26 @@ sub primitives {
     [ def => shift => sub { shift @{$_[0]} } ],
     [ def => 'exists-key' => sub { exists $_[0]->{$_[1]} } ],
     [ def => 'delete-key' => sub { delete $_[0]->{$_[1]} } ],
+    [ def => 'copy-with' => sub {
+        my $hash = shift;
+        +{ %{$hash}, @_ };
+      }
+    ],
+    [ def => 'sort-list' => sub {
+        my ($fun, $lst) = @_;
+        array_to_list([ sort { $fun->($a, $b) } @{list_to_array($lst)} ]);
+      }
+    ],
+    [ def => 'map-list' => sub {
+        my ($fun, $lst) = @_;
+        array_to_list([ map { $fun->($_) } @{list_to_array($lst)} ]);
+      }
+    ],
+    [ def => 'grep-list' => sub {
+        my ($fun, $lst) = @_;
+        array_to_list([ grep { $fun->($_) } @{list_to_array($lst)} ]);
+      }
+    ],
 
   ## Classes
 
@@ -830,11 +850,6 @@ __DATA__
           ["if", ["cons?", "lhs"],
            ["list", "def", ["car", "lhs"], ["list*", "lambda", ["cdr", "lhs"], "rhs"]],
            ["list", "def", "lhs", ["car", "rhs"]]]],
-
-         ["define", ["map-list", "f", "lst"],
-           ["if", ["nil?", "lst"],
-            [],
-            ["cons", ["f", ["car", "lst"]], ["map-list", "f", ["cdr", "lst"]]]]],
 
          ["define-macro", ["let", "bindings", "#rest", "body"],
           ["cons",
