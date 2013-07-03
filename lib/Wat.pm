@@ -818,7 +818,7 @@ sub run {
 
 sub run_jsony {
   my ($self, $jsony) = @_;
-  $self->run(decode_jsony($jsony));
+  $self->run(JSONY->new->load($jsony));
 }
 
 1;
