@@ -115,7 +115,7 @@ sub combine {
              $e, $k, $f, $o->{cdr}
            );
   }
-  fail("not a combiner: $cmb");
+  fail("not a combiner: ".($cmb||'undef'));
 }
 
 sub Opv {
