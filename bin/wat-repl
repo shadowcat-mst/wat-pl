@@ -22,6 +22,7 @@ LINE: while (defined(my $line = $rl->readline('> '))) {
   eval { $res = Dumper(Wat::repr($wat->run_jsony($line))); 1 }
     or do { print "Run failed: $@\n"; next LINE };
   print $res;
+  $wat->run([ def => _ => [ quote => $res ] ]);
 }
 
 exit 0;
