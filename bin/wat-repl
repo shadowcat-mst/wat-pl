@@ -18,11 +18,11 @@ if (@ARGV) {
 }
 
 LINE: while (defined(my $line = $rl->readline('> '))) {
-  my $res;
-  eval { $res = Dumper(Wat::repr($wat->run_jsony($line))); 1 }
+  my ($res, $raw);
+  eval { $res = Dumper(Wat::repr($raw = $wat->run_jsony($line))); 1 }
     or do { print "Run failed: $@\n"; next LINE };
   print $res;
-  $wat->run([ def => _ => [ quote => $res ] ]);
+  $wat->def('_', $raw);
 }
 
 exit 0;
