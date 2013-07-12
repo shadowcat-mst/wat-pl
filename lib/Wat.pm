@@ -829,6 +829,11 @@ sub run_jsony {
   $self->run(JSONY->new->load($jsony));
 }
 
+sub def {
+  my ($self, $sym, $val) = @_;
+  env_bind($self->{env}, Sym($sym), $val);
+}
+
 1;
 
 =head1 NAME
