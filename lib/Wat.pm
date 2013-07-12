@@ -656,6 +656,7 @@ sub primitives {
           [ sub { ':'.$_[0] }, 'sym' ],
       ]
     ]],
+    ["def", "get-current-environment", ["--vau", [], "e", "e"]],
     [ def => 'make-macro-expander',
       [ wrap =>
         [ '--vau', [ 'expander' ], '#ignore',
