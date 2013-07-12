@@ -76,6 +76,13 @@ sub Wat::Sym::wat_eval {
 
 sub Cons { bless({ car => $_[0], cdr => $_[1] }, 'Wat::Cons') }
 
+{ package Wat::Cons;
+  use overload (
+    '@{}' => sub { Wat::list_to_array($_[0]) },
+    fallback => 1,
+  );
+}
+
 sub Wat::Cons::wat_eval {
   my ($self, $e, $k, $f) = @_;
   my $op = do {
