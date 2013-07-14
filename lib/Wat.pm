@@ -808,15 +808,17 @@ sub basics {
   our $Basics ||= do { local $/; <DATA> };
 }
 
-sub new {
-  my ($class) = @_;
-  my $env = make_env;
+use Moo;
+
+has env => (is => 'ro', default => sub { make_env });
+
+sub BUILD {
+  my ($self) = @_;
+  my $env = $self->env;
   env_bind($env, Sym('def'), bless({}, 'Wat::Def'));
   env_bind($env, Sym('begin'), bless({}, 'Wat::Begin'));
-  my $new = bless({ env => $env }, $class);
-  $new->run(primitives);
-  $new->run_jsony(basics);
-  return $new;
+  $self->run(primitives);
+  $self->run_jsony(basics);
 }
 
 sub run {
