@@ -810,8 +810,10 @@ sub primitives {
   ]
 }
 
-sub basics {
-  our $Basics ||= do { local $/; <DATA> };
+{
+  my $basics = do { local $/; <DATA> };
+  close DATA;
+  sub basics { $basics }
 }
 
 use Moo;
