@@ -56,12 +56,12 @@ sub evaluate {
     if (@Wat_Stack > 200) {
       fail("Stack depth limit exceeded");
     }
-    if (DEBUG) {
-      warn 'Evaluating: '.Dumper(repr($x));
-      my $r = $x->wat_eval($e, $k, $f);
-      warn 'Evaluated: '.Dumper(repr($x)).'  -> '.Dumper(repr($r));
-      return $r;
-    }
+    #if (DEBUG) {
+    #  warn 'Evaluating: '.Dumper(repr($x));
+    #  my $r = $x->wat_eval($e, $k, $f);
+    #  warn 'Evaluated: '.Dumper(repr($x)).'  -> '.Dumper(repr($r));
+    #  return $r;
+    #}
     return $x->wat_eval($e, $k, $f);
   } else {
     return $x;
@@ -86,6 +86,9 @@ sub Cons { bless({ car => $_[0], cdr => $_[1] }, 'Wat::Cons') }
 
 sub Wat::Cons::wat_eval {
   my ($self, $e, $k, $f) = @_;
+  if (DEBUG) {
+    warn 'Eval cons: '.Dumper(repr($self));
+  }
   my $op = do {
     if (is_Continuation($k)) {
       continue_frame($k, $f);
