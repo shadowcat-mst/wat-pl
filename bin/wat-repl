@@ -1,28 +1,5 @@
 #!/usr/bin/env perl
 
-use strictures 1;
-use Term::ReadLine;
-use JSONY;
-use Data::Dumper::Concise;
-use IO::All;
-use Wat;
+use Wat::REPL;
 
-$|++;
-
-my $rl = Term::ReadLine->new('Wat');
-
-my $wat = Wat->new;
-
-if (@ARGV) {
-  $wat->run_jsony(io->file($ARGV[0])->all);
-}
-
-LINE: while (defined(my $line = $rl->readline('> '))) {
-  my ($res, $raw);
-  eval { $res = Dumper(Wat::repr($raw = $wat->run_jsony($line))); 1 }
-    or do { print "Run failed: $@\n"; next LINE };
-  print $res;
-  $wat->def('_', $raw);
-}
-
-exit 0;
+Wat::REPL->run_as_script;
