@@ -20,6 +20,7 @@ use Module::Runtime qw(use_module);
 use constant DEBUG => !!$ENV{WAT_DEBUG};
 no warnings 'once'; # reduce's $a/$b
 no warnings 'qw'; # using #rest etc. in qw()
+no warnings 'recursion';
 
 sub NIL; sub IGN;
 
@@ -52,7 +53,7 @@ sub evaluate {
   if ($x->$_can('wat_eval')) {
     our @Wat_Stack;
     local @Wat_Stack = (@Wat_Stack, $x);
-    if (@Wat_Stack > 80) {
+    if (@Wat_Stack > 200) {
       fail("Stack depth limit exceeded");
     }
     if (DEBUG) {
