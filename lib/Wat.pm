@@ -504,6 +504,8 @@ sub Wat::Sym::wat_match {
 sub Wat::Sym::wat_repr { $_[0]->{name} }
 sub Wat::Cons::wat_match {
   my ($self, $e, $rhs) = @_;
+  fail("cons expected, but got: ${\($rhs||'undef')}")
+    unless $rhs->$_isa('Wat::Cons');
   $self->{car}->wat_match($e, $rhs->{car});
   $self->{cdr}->wat_match($e, $rhs->{cdr});
   return;
@@ -522,7 +524,7 @@ sub Wat::Ign::wat_repr { '#ignore' }
 sub fail {
   our @Wat_Stack;
   die $_[0] if ref($_[0]);
-  die $_[0].' with stack '.Dumper([ map repr($_), @Wat_Stack ])
+  die $_[0].' with stack '.Dumper([ map repr($_), @Wat_Stack ]).$_[0]."\n";
 }
 sub repr {
   my ($r) = @_;
